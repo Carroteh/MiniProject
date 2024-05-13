@@ -36,4 +36,9 @@ public class ClientRegistrationPayload extends Payload{
     public void setTicket(byte[] ticket) {
         this.ticket = ticket;
     }
+
+    @Override
+    public String toString() {
+        return payloadId + "`" + id + "`" + hash + "`" + ticket;
+    }
 }

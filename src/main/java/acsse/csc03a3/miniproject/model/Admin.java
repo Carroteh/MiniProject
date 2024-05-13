@@ -1,68 +1,95 @@
 package acsse.csc03a3.miniproject.model;
 
 import acsse.csc03a3.Transaction;
-import acsse.csc03a3.miniproject.blockchain.ETransaction;
 import acsse.csc03a3.miniproject.payloads.AdminAssociationPayload;
-import acsse.csc03a3.miniproject.payloads.Payload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Random;
+import java.util.Base64;
 
 public class Admin extends User {
     private String ID;
-    private boolean listening = true;
+    private DatagramSocket socket;
 
     public Admin() {
         super();
         generateID();
-        startListening();
+        startUDPServer();
     }
 
-    private void startListening() {
-        //Read unplanned requests from the server
-        listening = true;
-        new Thread(() -> {
-            String message;
-            System.out.println("listening");
-            while(listening) {
-                message = readMessage();
-                if(message.equals("100 REGREQ")) {
-                    handleUserRegistrationRequest();
+    public void startUDPServer() {
+        try {
+            socket = new DatagramSocket(3302);
+
+            new Thread(() -> {
+                while (true) {
+                    byte[] receiveData = new byte[1024];
+                    DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                    try {
+                        socket.receive(receivePacket);
+
+                        //Get return details
+                        InetAddress address = receivePacket.getAddress();
+                        int port = receivePacket.getPort();
+
+                        String message = new String(receivePacket.getData()).trim();
+
+                        if (message.equals("TICKETREQ")) {
+                            socket.receive(receivePacket);
+                            String pk = new String(receivePacket.getData()).trim();
+                            String id = generateUserID(pk);
+                            String hash = bcHash(id + pk);
+
+                            if(!hash.isEmpty()) {
+                                byte[] ticket = this.sign(hash);
+                                sendUDPMessage(id.getBytes(), id.getBytes().length, address, port);
+                                sendUDPMessage(hash.getBytes(), hash.getBytes().length, address, port);
+
+                                String strTicket = Base64.getEncoder().encodeToString(ticket);
+                                sendUDPMessage(strTicket.getBytes(), strTicket.getBytes().length, address, port);
+                                System.out.println("Sent ticket to user.");
+                            }
+                            else {
+                                System.err.println("Could not generate user ticket.");
+                            }
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }).start();
+            }).start();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
-    private void stopListening() {
-        System.out.println("stopListening");
-        listening = false;
-    }
-
-    private void handleUserRegistrationRequest() {
-        stopListening();
-        System.out.println("handling user registration request");
-        sendMessage("100 Continue");
-        ETransaction<Payload> transaction = receiveTransaction();
-        String id = generateUserID();
-        String hash = bcHash(id + transaction.getData().getPublicKey());
-        if(!hash.isEmpty()) {
-            //Create ticket for the user to register
-            byte[] ticket = this.sign(hash);
-            sendMessage("100");
-            sendMessage(id);
-            sendMessage(hash);
-            sendBytes(ticket);
-        }
-        else {
-            System.err.println("Error creating user ticket hash");
-            sendMessage("101 Could not generate user ticket.");
-        }
-        startListening();
-    }
+//    private void handleUserRegistrationRequest() {
+//
+//        System.out.println("handling user registration request");
+//        sendMessage("100 Continue");
+//        ETransaction<Payload> transaction = receiveTransaction();
+//        String id = generateUserID();
+//        String hash = bcHash(id + transaction.getData().getPublicKey());
+//        if(!hash.isEmpty()) {
+//            //Create ticket for the user to register
+//            byte[] ticket = this.sign(hash);
+//            sendMessage("100");
+//            sendMessage(id);
+//            sendMessage(hash);
+//            sendBytes(ticket);
+//        }
+//        else {
+//            System.err.println("Error creating user ticket hash");
+//            sendMessage("101 Could not generate user ticket.");
+//        }
+//    }
 
     private String bcHash(String input) {
         String sha256hex = "";
@@ -78,11 +105,8 @@ public class Admin extends User {
     }
 
 
-    private String generateUserID() {
-        Random rand = new Random();
-        rand.setSeed(System.currentTimeMillis());
-        int id = rand.nextInt(5000);
-        return String.valueOf(id);
+    private String generateUserID(String PK) {
+        return PK.substring(PK.length()-5, PK.length()-1);
     }
 
     /**
@@ -98,7 +122,6 @@ public class Admin extends User {
      */
     @Override
     public void associate() {
-        stopListening();
         //create association payload
         AdminAssociationPayload payload = new AdminAssociationPayload(ID, SecurityUtils.publicKeyToString(this.publicKey));
 
@@ -118,6 +141,22 @@ public class Admin extends User {
             System.err.println("Error initiating association");
         }
         readMessage();
-        startListening();
+    }
+
+    /**
+     * Function that sends text to the UDP client
+     * @param message the message to send in byte array
+     * @param length the length of the byte array
+     * @param address the address of the client
+     * @param port the port of the client
+     */
+    private void sendUDPMessage(byte[] message, int length, InetAddress address, int port) {
+        try {
+            DatagramPacket sendPacket = new DatagramPacket(message, length, address, port);
+            socket.send(sendPacket);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

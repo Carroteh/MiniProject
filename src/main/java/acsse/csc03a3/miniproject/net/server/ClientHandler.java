@@ -20,10 +20,10 @@ public class ClientHandler implements Runnable {
     protected ObjectInputStream ois;
 
     private final BlockchainManager bcManager;
-    private ConcurrentHashMap<String, ClientHandler> clients;
+    private ConcurrentHashMap<String, String> adminDetails;
 
-    public ClientHandler(Socket connection, BlockchainManager bcManager, ConcurrentHashMap<String, ClientHandler> clients) {
-        this.clients = clients;
+    public ClientHandler(Socket connection, BlockchainManager bcManager, ConcurrentHashMap<String, String> adminDetails) {
+        this.adminDetails = adminDetails;
         this.connection = connection;
         this.bcManager = bcManager;
         this.oos = null;
@@ -76,26 +76,32 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleUserRegistration() {
-        sendMessage("100 Continue", false);
+        sendMessage("Continue", false);
         ETransaction<Payload> transaction = receiveTransaction();
         if(transaction != null) {
             ClientRegistrationPayload payload = (ClientRegistrationPayload) transaction.getData();
+
             //check if user is already registered
             if(bcManager.checkUserRegistered(payload.getId())) {
                 sendMessage("User already registered", true);
             }
             else {
-                String hash = payload.getHash();
-                byte[] ticket = payload.getTicket();
-                String adminPK = bcManager.getAdminPK();
-                //Verify the clients ticket
-                if(SecurityUtils.verify(hash, ticket, adminPK)) {
-                    bcManager.addTransaction(transaction);
-                    bcManager.registerStake(payload.getPublicKey(), 50);
-                    sendMessage("Client successfully registered on the blockchain.", false);
+                if(bcManager.checkUserAssociation(payload.getPublicKey())) {
+                    String hash = payload.getHash();
+                    byte[] ticket = payload.getTicket();
+                    String adminPK = bcManager.getAdminPK();
+                    //Verify the clients ticket
+                    if(SecurityUtils.verify(hash, ticket, adminPK)) {
+                        bcManager.addTransaction(transaction);
+                        bcManager.registerStake(payload.getPublicKey(), 50);
+                        sendMessage("Client successfully registered on the blockchain.", false);
+                    }
+                    else {
+                        sendMessage("Client ticket verification failed, registration aborted", true);
+                    }
                 }
                 else {
-                    sendMessage("Client ticket verification failed, registration aborted", true);
+                    sendMessage("Client registration failed, Client is not associated with the blockchain, registration aborted", true);
                 }
             }
         }
@@ -128,39 +134,14 @@ public class ClientHandler implements Runnable {
     }
 
     public void handleUserRegistrationRequest() {
-        //Check if an admin is registered
-        if(!bcManager.checkAdminExistance()) {
-            sendMessage("Admin does not exist.", true);
-            return;
-        }
-
-        sendMessage("Continue", false);
-
-        ClientHandler admin =  clients.get("admin");
-        admin.sendMessage("REGREQ", false);
-        String reply = admin.readMessage();
-        System.out.println("ADMIN REPLY: " + reply);
-        if(reply.startsWith("100")) {
-            //Transfer checks if user has been associated
-            transferTransactionToAdmin();
-            reply = readMessage();
-            if(reply.startsWith("100")) {
-                String id = admin.readMessage();
-                String hash = admin.readMessage();
-                byte[] ticket = admin.readBytes();
-
-                //Send ticket and ID to client
-                sendMessage(id, false);
-                sendMessage(hash, false);
-                sendBytes(ticket);
-            }
-            else {
-                sendMessage("Registration failed", true);
-            }
+        if(bcManager.checkAdminExistance()) {
+            sendMessage(adminDetails.get("address"), false);
+            sendMessage("3302", false);
         }
         else {
-            System.err.println("Admin is not responding.");
+            sendMessage("Admin does not exist.", true);
         }
+
     }
 
     public void handleAdminAssociation() {
@@ -175,7 +156,8 @@ public class ClientHandler implements Runnable {
                     bcManager.addTransaction(transaction);
                     bcManager.registerStake(transaction.getData().getPublicKey(), 50);
                     //Register admin with the server
-                    clients.put("admin", this);
+                    adminDetails.put("address", this.connection.getInetAddress().getHostName());
+                    adminDetails.put("port", this.connection.getPort() + "");
                     sendMessage("Admin has successfully been associated", false);
                 }
             }
@@ -322,25 +304,6 @@ public class ClientHandler implements Runnable {
         this.sendObject(data);
         this.sendBytes(signature);
         this.sendMessage(token, false);
-    }
-
-    /**
-     * Receives and sends the transaction to the admin
-     */
-    public void transferTransactionToAdmin() {
-        String sender = this.readMessage();
-        String receiver = this.readMessage();
-        Payload data = (Payload)this.readObject();
-        byte[] signature = this.readBytes();
-        String token = this.readMessage();
-
-        ClientHandler admin =  clients.get("admin");
-        if(bcManager.checkUserAssociation(data.getPublicKey())) {
-            admin.sendTransaction(sender, receiver, data, signature, token);
-        }
-        else {
-            sendMessage("User has not been associated.", true);
-        }
     }
 
     /**

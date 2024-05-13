@@ -21,8 +21,7 @@ public class Server {
         //Create blockchain
         Blockchain<Payload> blockchain = new Blockchain<>();
         BlockchainManager bcManager = new BlockchainManager(blockchain);
-        ClientHandler admin = null;
-        ConcurrentHashMap<String, ClientHandler> clients = new ConcurrentHashMap<>();
+        ConcurrentHashMap<String, String> adminDetails = new ConcurrentHashMap<>();
 
         try(ServerSocket serverSocket = new ServerSocket(port)) {
             while(true) {
@@ -30,7 +29,7 @@ public class Server {
                 Socket connection = serverSocket.accept();
 
                 //Create a clientHandler
-                ClientHandler clientHandler = new ClientHandler(connection, bcManager, clients);
+                ClientHandler clientHandler = new ClientHandler(connection, bcManager, adminDetails);
                 //Create a new thread for the client
                 new Thread(clientHandler).start();
 

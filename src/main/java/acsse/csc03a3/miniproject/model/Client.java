@@ -1,10 +1,15 @@
 package acsse.csc03a3.miniproject.model;
 
 import acsse.csc03a3.Transaction;
+import acsse.csc03a3.miniproject.net.server.ClientHandler;
 import acsse.csc03a3.miniproject.payloads.ClientAssociationPayload;
 import acsse.csc03a3.miniproject.payloads.ClientRegistrationPayload;
-import acsse.csc03a3.miniproject.payloads.ClientRegistrationRequestPayload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
+
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.util.Base64;
 
 public class Client extends User{
     public Client() {
@@ -34,35 +39,55 @@ public class Client extends User{
         readMessage();
     }
 
+    public void getAdmin() {
+        sendMessage("ADMIN");
+        ClientHandler admin = (ClientHandler)this.readObject();
+        admin.sendMessage("REGREQ", false);
+
+    }
+
     public ClientRegistrationPayload registerRequest() {
-        //Create registration payload
-        ClientRegistrationRequestPayload payload = new ClientRegistrationRequestPayload(SecurityUtils.publicKeyToString(this.publicKey));
 
-        //create a transaction
-        Transaction<ClientRegistrationRequestPayload> transaction = new Transaction<>("User", "Server", payload);
-        //Sign the string representation of the transaction
-        byte[] signature = this.sign(transaction.toString());
+            sendMessage("REGREQ");
 
-        //Start registration
-        sendMessage("REGREQ");
-        String response = readMessage();
-        if(response.startsWith("100")) {
-            //Send the transaction
-            sendTransaction("User", "Server", payload, signature, transaction.toString());
-            response = readMessage();
-            if(response.startsWith("100")) {
-                String id = readMessage();
-                String hash = readMessage();
-                byte[] ticket = readBytes();
-                return new ClientRegistrationPayload(id, hash, ticket, SecurityUtils.publicKeyToString(publicKey));
+            //Get the admin network details from the server
+            String reply = readMessage();
+            if(reply.startsWith("100")) {
+                String adminAddress = reply.substring(4);
+                int adminPort = Integer.parseInt(readMessage().substring(4));
+
+                try {
+                    //Connect to the admin directly
+                    DatagramSocket socket = new DatagramSocket(3303, InetAddress.getByName("localhost"));
+                    String message = "TICKETREQ";
+                    byte[] msgBuffer = message.getBytes();
+                    DatagramPacket sendPacket = new DatagramPacket(msgBuffer, msgBuffer.length, InetAddress.getByName(adminAddress), adminPort);
+                    socket.send(sendPacket);
+                    System.out.println("Sent Ticket request to admin.");
+                    byte[] pkBuffer = SecurityUtils.publicKeyToString(this.publicKey).getBytes();
+                    sendPacket = new DatagramPacket(pkBuffer, pkBuffer.length, InetAddress.getByName(adminAddress), adminPort);
+                    socket.send(sendPacket);
+
+                    byte[] buffer = new byte[1024];
+                    DatagramPacket receivePkt = new DatagramPacket(buffer, buffer.length);
+
+                    socket.receive(receivePkt);
+                    String id = new String(receivePkt.getData()).trim();
+                    socket.receive(receivePkt);
+                    String hash = new String(receivePkt.getData()).trim();
+                    socket.receive(receivePkt);
+                    String strTicket = new String(receivePkt.getData()).trim();
+                    byte[] ticket = Base64.getDecoder().decode(strTicket);
+
+                    socket.close();
+                    return new ClientRegistrationPayload(id, hash, ticket, SecurityUtils.publicKeyToString(this.publicKey));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             else {
-                System.err.println("Error retrieving ticket.");
+                System.err.println("An Admin is not registered.");
             }
-        }
-        else {
-            System.err.println("Error initiating registration");
-        }
         return null;
     }
 
@@ -79,6 +104,7 @@ public class Client extends User{
             else {
                 System.err.println("Error in registration");
             }
+            readMessage();
         }
     }
 }

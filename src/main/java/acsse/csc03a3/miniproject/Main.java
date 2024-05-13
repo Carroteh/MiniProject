@@ -14,9 +14,12 @@ public class Main extends Application {
     public void start(Stage stage) throws IOException {
         Admin admin = new Admin();
         admin.associate();
-        Client client = new Client();
-        client.associate();
-        client.register();
+        Client client1 = new Client();
+        client1.associate();
+        client1.register();
+        Client client2 = new Client();
+        client2.associate();
+        client2.register();
 
 //        List<Transaction<Payload>> listy = new ArrayList<>();
 //        listy.add(new ETransaction<>("among", "suse", new AdminAssociationPayload("1234", "WUSHDJLKXCJV")));

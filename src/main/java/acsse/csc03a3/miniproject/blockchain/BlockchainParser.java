@@ -4,6 +4,8 @@ import acsse.csc03a3.Block;
 import acsse.csc03a3.Blockchain;
 import acsse.csc03a3.Transaction;
 import acsse.csc03a3.miniproject.payloads.AdminAssociationPayload;
+import acsse.csc03a3.miniproject.payloads.ClientAssociationPayload;
+import acsse.csc03a3.miniproject.payloads.ClientRegistrationPayload;
 import acsse.csc03a3.miniproject.payloads.Payload;
 
 import java.util.ArrayList;
@@ -49,15 +51,23 @@ public class BlockchainParser {
         String sender = payloadStr[0].trim();
         String receiver = payloadStr[1].trim();
         String type = payloadStr[2].trim();
-        String id = payloadStr[3].trim();
-        String PK = payloadStr[4].trim();
-        String timeStamp = payloadStr[5];
 
         Payload payload = null;
         if(type.equals("1")) {
+            String id = payloadStr[3].trim();
+            String PK = payloadStr[4].trim();
             payload = new AdminAssociationPayload(id, PK);
         }
-        //TODO : cases for alternate payloads
+        else if(type.equals("3")) {
+            String PK = payloadStr[3].trim();
+            payload = new ClientAssociationPayload(PK);
+        }
+        else if (type.equals("4")) {
+            String id = payloadStr[3].trim();
+            String hash = payloadStr[4].trim();
+            String PK = payloadStr[6].trim();
+            payload = new ClientRegistrationPayload(id, hash, new byte[0], PK);
+        }
         return new Transaction(sender, receiver, payload);
     }
 
