@@ -65,6 +65,21 @@ public class BlockchainSearcher {
         return false;
     }
 
+    public boolean checkUsernameRegistered(String username) {
+        ArrayList<Block<Payload>> blocks = parser.getBlocks();
+        for (Block<Payload> block : blocks) {
+            List<Transaction<Payload>> transactions = block.getTransactions();
+            for (Transaction<Payload> transaction : transactions) {
+                if(transaction.getData() instanceof ClientRegistrationPayload client) {
+                    if(client.getUsername().equals(username)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     public String getAdminPK() {
         ArrayList<Block<Payload>> blocks = parser.getBlocks();
         for (Block<Payload> block : blocks) {

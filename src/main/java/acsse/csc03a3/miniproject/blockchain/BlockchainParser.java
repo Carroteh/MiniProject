@@ -64,9 +64,10 @@ public class BlockchainParser {
         }
         else if (type.equals("4")) {
             String id = payloadStr[3].trim();
-            String hash = payloadStr[4].trim();
-            String PK = payloadStr[6].trim();
-            payload = new ClientRegistrationPayload(id, hash, new byte[0], PK);
+            String username = payloadStr[4].trim();
+            String hash = payloadStr[5].trim();
+            String PK = payloadStr[7].trim();
+            payload = new ClientRegistrationPayload(id,username, hash, new byte[0], PK);
         }
         return new Transaction(sender, receiver, payload);
     }

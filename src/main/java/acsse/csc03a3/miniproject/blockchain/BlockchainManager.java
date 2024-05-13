@@ -74,4 +74,15 @@ public class BlockchainManager {
         return bcSearcher.getAdminPK();
     }
 
+    public boolean checkUsernameRegistered(String username) {
+        for (Transaction<Payload> transaction : currentTSet) {
+            if(transaction.getData() instanceof ClientRegistrationPayload client) {
+                if(client.getUsername().equals(username)) {
+                    return true;
+                }
+            }
+        }
+        return bcSearcher.checkUsernameRegistered(username);
+    }
+
 }

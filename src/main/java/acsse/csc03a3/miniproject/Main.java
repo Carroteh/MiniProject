@@ -8,42 +8,28 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.List;
 
 public class Main extends Application {
     @Override
-    public void start(Stage stage) throws IOException {
+    public void start(Stage stage) throws IOException, InterruptedException {
         Admin admin = new Admin();
         admin.associate();
-        Client client1 = new Client();
+        Client client1 = new Client("JOe");
         client1.associate();
         client1.register();
-        Client client2 = new Client();
+        Client client2 = new Client("mama");
         client2.associate();
         client2.register();
-
-//        List<Transaction<Payload>> listy = new ArrayList<>();
-//        listy.add(new ETransaction<>("among", "suse", new AdminAssociationPayload("1234", "WUSHDJLKXCJV")));
-//        listy.add((new ETransaction<>("yoda", "gaming", new AdminAssociationPayload("4321", "ALSKJDLKASJD"))));
-//        Blockchain<Payload> blockchain = new Blockchain();
-//        blockchain.registerStake("among", 1);
-//        blockchain.addBlock(listy);
-//
-//        List<Transaction<Payload>> listy2 = new ArrayList<>();
-//        listy2.add(new Transaction<>("among", "suse", new AdminAssociationPayload("1234", "WUSHDJLKXCJV")));
-//        listy2.add((new Transaction<>("yoda", "gaming", new AdminAssociationPayload("4321", "ALSKJDLKASJD"))));
-//        Blockchain<Payload> blockchain2 = new Blockchain();
-//        blockchain2.registerStake("among", 1);
-//        blockchain2.addBlock(listy2);
-//
-//        System.out.println(blockchain);
-//        System.out.println(blockchain2);
-//
-//        BlockchainParser parser = new BlockchainParser(blockchain);
-//        ArrayList<Block<Payload>> arr =  parser.getBlocks();
-//
-//        for(Block<Payload> block : arr){
-//            System.out.println(block.getPreviousHash() + " "  + block.getTransactions());
-//        }
+        List<String> list = client1.getTrustedList();
+        for(String s : list) {
+            System.out.println(s);
+        }
+        System.out.println("CALLING " + list.get(1));
+        Thread.sleep(1000);
+        client1.call(list.get(1));
+        //client2.accept();
+        //client2.hangup();
 
 
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("hello-view.fxml"));

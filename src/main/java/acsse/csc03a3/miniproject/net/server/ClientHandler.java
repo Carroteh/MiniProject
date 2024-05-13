@@ -1,14 +1,18 @@
 package acsse.csc03a3.miniproject.net.server;
 
+import acsse.csc03a3.Transaction;
 import acsse.csc03a3.miniproject.blockchain.BlockchainManager;
 import acsse.csc03a3.miniproject.blockchain.ETransaction;
+import acsse.csc03a3.miniproject.payloads.AuthenticationPayload;
 import acsse.csc03a3.miniproject.payloads.ClientRegistrationPayload;
 import acsse.csc03a3.miniproject.payloads.Payload;
+import acsse.csc03a3.miniproject.payloads.RequestPayload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,13 +25,17 @@ public class ClientHandler implements Runnable {
 
     private final BlockchainManager bcManager;
     private ConcurrentHashMap<String, String> adminDetails;
+    private List<String> trustedList;
+    private boolean running;
 
-    public ClientHandler(Socket connection, BlockchainManager bcManager, ConcurrentHashMap<String, String> adminDetails) {
+    public ClientHandler(Socket connection, BlockchainManager bcManager, ConcurrentHashMap<String, String> adminDetails, List<String> trustedList) {
+        this.trustedList = trustedList;
         this.adminDetails = adminDetails;
         this.connection = connection;
         this.bcManager = bcManager;
         this.oos = null;
         this.ois = null;
+        this.running = true;
     }
 
     /**
@@ -40,7 +48,7 @@ public class ClientHandler implements Runnable {
             oos.flush();
             this.ois = new ObjectInputStream(new BufferedInputStream(connection.getInputStream()));
 
-            while(true) {
+            while(running) {
                 String response;
 
                 //Check if client disconnected
@@ -66,12 +74,58 @@ public class ClientHandler implements Runnable {
                 else if(command.equals("REGISTER") && numTokens == 1) {
                     handleUserRegistration();
                 }
+                else if(command.equals("LIST") && numTokens == 1) {
+                    handleGetTrustedList();
+                }
+                else if(command.equals("AUTH") && numTokens == 1) {
+                    handleMutualAuthentication();
+                }
                 else {
                     sendMessage("Bad request", true);
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void handleMutualAuthentication() {
+        sendMessage("Continue", false);
+        Transaction<Payload> transaction = receiveTransaction();
+        if(transaction != null) {
+            AuthenticationPayload payload = (AuthenticationPayload) transaction.getData();
+            String callerUsername = payload.getCallerID();
+            String calleeUsername = payload.getCalleeID();
+            if(bcManager.checkUsernameRegistered(callerUsername) && bcManager.checkUsernameRegistered(calleeUsername)) {
+                sendMessage("Successfully authenticated.", false);
+            }
+            else {
+                sendMessage("Authentication failed.", true);
+            }
+        }
+        else {
+            sendMessage("Error receiving transaction", true);
+        }
+        running = false;
+    }
+
+    private void handleGetTrustedList() {
+        sendMessage("Continue", false);
+        Transaction<Payload> transaction = receiveTransaction();
+        if(transaction != null) {
+            RequestPayload payload = (RequestPayload) transaction.getData();
+            if(bcManager.checkUserRegistered(payload.getId())) {
+                sendMessage("Validated, sending list.", false);
+                bcManager.addTransaction(transaction);
+                List<String> arrTrustedList = trustedList.stream().toList();
+                sendObject(arrTrustedList);
+            }
+            else {
+                sendMessage("User is not registered", true);
+            }
+        }
+        else {
+            sendMessage("Error receiving transaction.", true);
         }
     }
 
@@ -94,6 +148,9 @@ public class ClientHandler implements Runnable {
                     if(SecurityUtils.verify(hash, ticket, adminPK)) {
                         bcManager.addTransaction(transaction);
                         bcManager.registerStake(payload.getPublicKey(), 50);
+
+                        //Add new user to the trusted list
+                        this.trustedList.add(payload.getUsername());
                         sendMessage("Client successfully registered on the blockchain.", false);
                     }
                     else {
@@ -133,7 +190,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    public void handleUserRegistrationRequest() {
+    private void handleUserRegistrationRequest() {
         if(bcManager.checkAdminExistance()) {
             sendMessage(adminDetails.get("address"), false);
             sendMessage("3302", false);
@@ -144,7 +201,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    public void handleAdminAssociation() {
+    private void handleAdminAssociation() {
         sendMessage("Continue", false);
         try {
             ETransaction<Payload> transaction =  receiveTransaction();
