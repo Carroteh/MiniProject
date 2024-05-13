@@ -10,6 +10,7 @@ import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientHandler implements Runnable {
 
@@ -19,10 +20,10 @@ public class ClientHandler implements Runnable {
     protected ObjectInputStream ois;
 
     private final BlockchainManager bcManager;
-    private ClientHandler admin;
+    private ConcurrentHashMap<String, ClientHandler> clients;
 
-    public ClientHandler(Socket connection, BlockchainManager bcManager, ClientHandler admin) {
-        this.admin = admin;
+    public ClientHandler(Socket connection, BlockchainManager bcManager, ConcurrentHashMap<String, ClientHandler> clients) {
+        this.clients = clients;
         this.connection = connection;
         this.bcManager = bcManager;
         this.oos = null;
@@ -135,8 +136,10 @@ public class ClientHandler implements Runnable {
 
         sendMessage("Continue", false);
 
+        ClientHandler admin =  clients.get("admin");
         admin.sendMessage("REGREQ", false);
-        String reply = readMessage();
+        String reply = admin.readMessage();
+        System.out.println("ADMIN REPLY: " + reply);
         if(reply.startsWith("100")) {
             //Transfer checks if user has been associated
             transferTransactionToAdmin();
@@ -172,7 +175,7 @@ public class ClientHandler implements Runnable {
                     bcManager.addTransaction(transaction);
                     bcManager.registerStake(transaction.getData().getPublicKey(), 50);
                     //Register admin with the server
-                    this.admin = this;
+                    clients.put("admin", this);
                     sendMessage("Admin has successfully been associated", false);
                 }
             }
@@ -331,11 +334,12 @@ public class ClientHandler implements Runnable {
         byte[] signature = this.readBytes();
         String token = this.readMessage();
 
+        ClientHandler admin =  clients.get("admin");
         if(bcManager.checkUserAssociation(data.getPublicKey())) {
             admin.sendTransaction(sender, receiver, data, signature, token);
         }
         else {
-            sendMessage("Use has not been associated.", true);
+            sendMessage("User has not been associated.", true);
         }
     }
 

@@ -16,6 +16,7 @@ public class Main extends Application {
         admin.associate();
         Client client = new Client();
         client.associate();
+        client.register();
 
 //        List<Transaction<Payload>> listy = new ArrayList<>();
 //        listy.add(new ETransaction<>("among", "suse", new AdminAssociationPayload("1234", "WUSHDJLKXCJV")));

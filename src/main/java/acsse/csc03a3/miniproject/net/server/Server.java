@@ -7,9 +7,9 @@ import acsse.csc03a3.miniproject.payloads.Payload;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
-    private static ClientHandler admin;
 
     public static void main(String[] args) {start(3301);}
 
@@ -21,6 +21,8 @@ public class Server {
         //Create blockchain
         Blockchain<Payload> blockchain = new Blockchain<>();
         BlockchainManager bcManager = new BlockchainManager(blockchain);
+        ClientHandler admin = null;
+        ConcurrentHashMap<String, ClientHandler> clients = new ConcurrentHashMap<>();
 
         try(ServerSocket serverSocket = new ServerSocket(port)) {
             while(true) {
@@ -28,7 +30,7 @@ public class Server {
                 Socket connection = serverSocket.accept();
 
                 //Create a clientHandler
-                ClientHandler clientHandler = new ClientHandler(connection, bcManager, admin);
+                ClientHandler clientHandler = new ClientHandler(connection, bcManager, clients);
                 //Create a new thread for the client
                 new Thread(clientHandler).start();
 
@@ -39,6 +41,4 @@ public class Server {
             e.printStackTrace();
         }
     }
-
-
 }

@@ -19,10 +19,15 @@ public class Admin extends User {
     public Admin() {
         super();
         generateID();
+        startListening();
+    }
 
+    private void startListening() {
         //Read unplanned requests from the server
+        listening = true;
         new Thread(() -> {
             String message;
+            System.out.println("listening");
             while(listening) {
                 message = readMessage();
                 if(message.equals("100 REGREQ")) {
@@ -32,7 +37,14 @@ public class Admin extends User {
         }).start();
     }
 
+    private void stopListening() {
+        System.out.println("stopListening");
+        listening = false;
+    }
+
     private void handleUserRegistrationRequest() {
+        stopListening();
+        System.out.println("handling user registration request");
         sendMessage("100 Continue");
         ETransaction<Payload> transaction = receiveTransaction();
         String id = generateUserID();
@@ -49,6 +61,7 @@ public class Admin extends User {
             System.err.println("Error creating user ticket hash");
             sendMessage("101 Could not generate user ticket.");
         }
+        startListening();
     }
 
     private String bcHash(String input) {
@@ -85,7 +98,7 @@ public class Admin extends User {
      */
     @Override
     public void associate() {
-        listening = false;
+        stopListening();
         //create association payload
         AdminAssociationPayload payload = new AdminAssociationPayload(ID, SecurityUtils.publicKeyToString(this.publicKey));
 
@@ -105,6 +118,6 @@ public class Admin extends User {
             System.err.println("Error initiating association");
         }
         readMessage();
-        listening = true;
+        startListening();
     }
 }
