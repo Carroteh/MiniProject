@@ -4,6 +4,7 @@ import acsse.csc03a3.Transaction;
 import acsse.csc03a3.miniproject.payloads.ClientAssociationPayload;
 import acsse.csc03a3.miniproject.payloads.ClientRegistrationPayload;
 import acsse.csc03a3.miniproject.payloads.ClientRegistrationRequestPayload;
+import acsse.csc03a3.miniproject.payloads.ClientTicketPayload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
 
 public class Client extends User{
@@ -45,25 +46,23 @@ public class Client extends User{
 
         //Start registration
         sendMessage("REGREQ");
-        String response = readMessage();
-        if(response.startsWith("100")) {
+        //String response = readMessage();
+        //if(response.startsWith("100")) {
             //Send the transaction
             sendTransaction("User", "Server", payload, signature, transaction.toString());
-            response = readMessage();
-            if(response.startsWith("100")) {
-                String id = readMessage();
-                String hash = readMessage();
-                byte[] ticket = readBytes();
-                return new ClientRegistrationPayload(id, hash, ticket, SecurityUtils.publicKeyToString(publicKey));
-            }
-            else {
-                System.err.println("Error retrieving ticket.");
-            }
-        }
-        else {
-            System.err.println("Error initiating registration");
-        }
-        return null;
+           // response = readMessage();
+           // if(response.startsWith("100")) {
+                ClientTicketPayload myTicket = (ClientTicketPayload) readObject();
+                return new ClientRegistrationPayload(myTicket.getId(), myTicket.getHash(), myTicket.getTicket(), SecurityUtils.publicKeyToString(publicKey));
+//            }
+//            else {
+//                System.err.println("Error retrieving ticket.");
+//            }
+//        }
+//        else {
+//            System.err.println("Error initiating registration");
+//        }
+//        return null;
     }
 
     public void register() {

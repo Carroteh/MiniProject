@@ -3,6 +3,7 @@ package acsse.csc03a3.miniproject.model;
 import acsse.csc03a3.Transaction;
 import acsse.csc03a3.miniproject.blockchain.ETransaction;
 import acsse.csc03a3.miniproject.payloads.AdminAssociationPayload;
+import acsse.csc03a3.miniproject.payloads.ClientTicketPayload;
 import acsse.csc03a3.miniproject.payloads.Payload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
 import org.bouncycastle.util.encoders.Hex;
@@ -45,17 +46,19 @@ public class Admin extends User {
     private void handleUserRegistrationRequest() {
         stopListening();
         System.out.println("handling user registration request");
-        sendMessage("100 Continue");
         ETransaction<Payload> transaction = receiveTransaction();
+        System.out.println("RECEIVED USER TRANSACTION");
+        System.out.println("TRANSACTION" + transaction);
         String id = generateUserID();
         String hash = bcHash(id + transaction.getData().getPublicKey());
         if(!hash.isEmpty()) {
             //Create ticket for the user to register
             byte[] ticket = this.sign(hash);
-            sendMessage("100");
-            sendMessage(id);
-            sendMessage(hash);
-            sendBytes(ticket);
+            sendMessage("TICKET");
+            System.out.println("SENDING TICKET");
+            ClientTicketPayload ticketForClient = new ClientTicketPayload(SecurityUtils.publicKeyToString(publicKey), id, hash, ticket);
+            sendObject(ticketForClient);
+            sendMessage("SENT TICKET");
         }
         else {
             System.err.println("Error creating user ticket hash");

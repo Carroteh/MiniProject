@@ -3,6 +3,7 @@ package acsse.csc03a3.miniproject.net.server;
 import acsse.csc03a3.miniproject.blockchain.BlockchainManager;
 import acsse.csc03a3.miniproject.blockchain.ETransaction;
 import acsse.csc03a3.miniproject.payloads.ClientRegistrationPayload;
+import acsse.csc03a3.miniproject.payloads.ClientTicketPayload;
 import acsse.csc03a3.miniproject.payloads.Payload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
 
@@ -21,6 +22,7 @@ public class ClientHandler implements Runnable {
 
     private final BlockchainManager bcManager;
     private ConcurrentHashMap<String, ClientHandler> clients;
+    private ClientTicketPayload clientTicket;
 
     public ClientHandler(Socket connection, BlockchainManager bcManager, ConcurrentHashMap<String, ClientHandler> clients) {
         this.clients = clients;
@@ -66,6 +68,9 @@ public class ClientHandler implements Runnable {
                 else if(command.equals("REGISTER") && numTokens == 1) {
                     handleUserRegistration();
                 }
+                else if(command.equals("TICKET") && numTokens == 1) {
+                    this.clientTicket = (ClientTicketPayload) readObject();
+                }
                 else {
                     sendMessage("Bad request", true);
                 }
@@ -73,6 +78,10 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private ClientTicketPayload getClientTicket() {
+        return this.clientTicket;
     }
 
     private void handleUserRegistration() {
@@ -133,35 +142,67 @@ public class ClientHandler implements Runnable {
             sendMessage("Admin does not exist.", true);
             return;
         }
+        String sender = this.readMessage();
+        String receiver = this.readMessage();
+        Payload data = (Payload)this.readObject();
+        byte[] signature = this.readBytes();
+        String token = this.readMessage();
 
-        sendMessage("Continue", false);
+        ClientHandler admin = clients.get("admin");
 
-        ClientHandler admin =  clients.get("admin");
         admin.sendMessage("REGREQ", false);
-        String reply = admin.readMessage();
-        System.out.println("ADMIN REPLY: " + reply);
-        if(reply.startsWith("100")) {
-            //Transfer checks if user has been associated
-            transferTransactionToAdmin();
-            reply = readMessage();
-            if(reply.startsWith("100")) {
-                String id = admin.readMessage();
-                String hash = admin.readMessage();
-                byte[] ticket = admin.readBytes();
+        admin.sendMessage(sender, false);
+        admin.sendMessage(receiver, false);
+        admin.sendObject(data);
+        admin.sendBytes(signature);
+        admin.sendMessage(token, false);
+        //Admin sends ticket to its handler
+        //Access ticket from admin handler
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
-                //Send ticket and ID to client
-                sendMessage(id, false);
-                sendMessage(hash, false);
-                sendBytes(ticket);
-            }
-            else {
-                sendMessage("Registration failed", true);
-            }
-        }
-        else {
-            System.err.println("Admin is not responding.");
-        }
+        ClientTicketPayload clientTicket = admin.getClientTicket();
+        sendObject(clientTicket);
     }
+
+//    public void handleUserRegistrationRequest() {
+//        //Check if an admin is registered
+//        if(!bcManager.checkAdminExistance()) {
+//            sendMessage("Admin does not exist.", true);
+//            return;
+//        }
+//
+//        sendMessage("Continue", false);
+//
+//        ClientHandler admin =  clients.get("admin");
+//        admin.sendMessage("REGREQ", false);
+//        String reply = admin.readMessage();
+//        System.out.println("ADMIN REPLY: " + reply);
+//        if(reply.startsWith("100")) {
+//            //Transfer checks if user has been associated
+//            transferTransactionToAdmin();
+//            reply = readMessage();
+//            if(reply.startsWith("100")) {
+//                String id = admin.readMessage();
+//                String hash = admin.readMessage();
+//                byte[] ticket = admin.readBytes();
+//
+//                //Send ticket and ID to client
+//                sendMessage(id, false);
+//                sendMessage(hash, false);
+//                sendBytes(ticket);
+//            }
+//            else {
+//                sendMessage("Registration failed", true);
+//            }
+//        }
+//        else {
+//            System.err.println("Admin is not responding.");
+//        }
+//    }
 
     public void handleAdminAssociation() {
         sendMessage("Continue", false);
@@ -336,7 +377,12 @@ public class ClientHandler implements Runnable {
 
         ClientHandler admin =  clients.get("admin");
         if(bcManager.checkUserAssociation(data.getPublicKey())) {
-            admin.sendTransaction(sender, receiver, data, signature, token);
+            //admin.sendTransaction(sender, receiver, data, signature, token);
+            admin.sendMessage(sender, false);
+            admin.sendMessage(receiver, false);
+            admin.sendObject(data);
+            admin.sendBytes(signature);
+            admin.sendMessage(token, false);
         }
         else {
             sendMessage("User has not been associated.", true);
