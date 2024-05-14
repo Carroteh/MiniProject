@@ -3,6 +3,7 @@ package acsse.csc03a3.miniproject.net.server;
 import acsse.csc03a3.Blockchain;
 import acsse.csc03a3.miniproject.blockchain.BlockchainManager;
 import acsse.csc03a3.miniproject.payloads.Payload;
+import javafx.scene.control.TextArea;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -14,13 +15,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
 
-    public static void main(String[] args) {start(3301);}
+    public static void main(String[] args) {start(3301, null);}
 
     /**
      * Function that accepts client connections and delegates them to a client handler
      * @param port the port to listen on
      */
-    public static void start(int port) {
+    public static void start(int port, TextArea txtLog) {
         //Create blockchain
         Blockchain<Payload> blockchain = new Blockchain<>();
         BlockchainManager bcManager = new BlockchainManager(blockchain);
@@ -33,7 +34,7 @@ public class Server {
                 Socket connection = serverSocket.accept();
 
                 //Create a clientHandler
-                ClientHandler clientHandler = new ClientHandler(connection, bcManager, adminDetails, trustedUsers);
+                ClientHandler clientHandler = new ClientHandler(connection, bcManager, adminDetails, trustedUsers, txtLog);
                 //Create a new thread for the client
                 new Thread(clientHandler).start();
 

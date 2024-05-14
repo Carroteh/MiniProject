@@ -3,6 +3,8 @@ package acsse.csc03a3.miniproject.model;
 import acsse.csc03a3.Transaction;
 import acsse.csc03a3.miniproject.payloads.AdminAssociationPayload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
@@ -18,8 +20,9 @@ public class Admin extends User {
     private String ID;
     private DatagramSocket socket;
 
-    public Admin() {
-        super();
+
+    public Admin(TextArea txtLog, TextField txtID, TextField txtPublicKey, TextField txtPrivateKey, TextField txtClientsRegistered) {
+        super(txtLog, txtID, txtPublicKey, txtPrivateKey, txtClientsRegistered);
         generateID();
         startUDPServer();
     }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+
+<AnchorPane fx:id="root" prefHeight="465.0" prefWidth="469.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="acsse.csc03a3.miniproject.controller.ChooserController">
+   <children>
+      <Button layoutX="43.0" layoutY="174.0" mnemonicParsing="false" onAction="#onChooseAdmin" prefHeight="109.0" prefWidth="383.0" text="Admin">
+         <font>
+            <Font size="20.0" />
+         </font>
+      </Button>
+      <Button layoutX="43.0" layoutY="309.0" mnemonicParsing="false" onAction="#onChooseClient" prefHeight="109.0" prefWidth="383.0" text="Client">
+         <font>
+            <Font size="20.0" />
+         </font>
+      </Button>
+      <Button layoutX="43.0" layoutY="44.0" mnemonicParsing="false" onAction="#onStartServer" prefHeight="109.0" prefWidth="383.0" text="Start Server">
+         <font>
+            <Font size="20.0" />
+         </font>
+      </Button>
+   </children>
+</AnchorPane>

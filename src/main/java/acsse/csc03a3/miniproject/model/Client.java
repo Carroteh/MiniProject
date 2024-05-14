@@ -7,6 +7,8 @@ import acsse.csc03a3.miniproject.payloads.ClientRegistrationPayload;
 import acsse.csc03a3.miniproject.payloads.RequestPayload;
 import acsse.csc03a3.miniproject.utils.NotifListener;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import webphone.webphone;
 
 import java.net.DatagramPacket;
@@ -20,21 +22,13 @@ public class Client extends User{
     private String username;
     private String id;
     private webphone wobj;
+    private boolean authed;
 
-    public Client(String username) {
-        super();
+    public Client(TextArea txtLog, TextField txtID, TextField txtPublicKey, TextField txtPrivateKey, TextField txtClientsRegistered) {
+        super(txtLog, txtID, txtPublicKey, txtPrivateKey, txtClientsRegistered);
         this.username = username;
-
-        //VOIP Setup
-        this.wobj = new webphone();
-        wobj.API_SetNotificationListener(new NotifListener());
-        wobj.API_SetParameter("serveraddress", "127.0.0.1:5061");
-        wobj.API_SetParameter("setserverfromtarget", "2");
-        wobj.API_SetParameter("register", "0");
-        wobj.API_SetParameter("username", username);
-        wobj.API_SetParameter("loglevel", "5");
-        wobj.API_SetParameter("signalingport", "3310");
-
+        this.authed = false;
+        setupVoIP();
     }
 
     @Override
@@ -50,7 +44,7 @@ public class Client extends User{
         //start association
         sendMessage("ASSOC User");
         String response = readMessage();
-        if(response.substring(0,3).equals("100")) {
+        if(response.startsWith("100")) {
             //Send the transaction
             sendTransaction("User", "Server", payload, signature, transaction.toString());
         }
@@ -64,19 +58,28 @@ public class Client extends User{
         wobj.API_Accept();
     }
 
-    public void call(String username) {
-        wobj.API_Start();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    public void setupVoIP() {
+        //VOIP Setup
+        this.wobj = new webphone();
 
-        if(authenticate(username)) {
-            wobj.API_Call(-1, username + "@127.0.0.1:3310");
+        wobj.API_SetNotificationListener(new NotifListener());
+        wobj.API_SetParameter("serveraddress", "127.0.0.1:1234");
+        wobj.API_SetParameter("setserverfromtarget", "2");
+        wobj.API_SetParameter("register", "0");
+        wobj.API_SetParameter("username", username);
+        wobj.API_SetParameter("loglevel", "5");
+        //wobj.API_SetParameter("signalingport", "1234");
+        wobj.API_Start();
+    }
+
+
+    public void call(String username) {
+        setupVoIP();
+        if(authed) {
+            wobj.API_Call(-1, username + "@127.0.0.1:1234");
         }
         else {
-            System.err.println("Could not start voice call with " + username);
+            System.err.println("User not authenticated.");
         }
     }
 
@@ -84,10 +87,9 @@ public class Client extends User{
         wobj.API_Hangup();
     }
 
-    private boolean authenticate(String calleeUsername) {
+    public void authenticate(String calleeUsername) {
         sendMessage("AUTH");
         String reply = readMessage();
-        boolean authed = false;
         if(reply.startsWith("100")) {
             AuthenticationPayload payload = new AuthenticationPayload(SecurityUtils.publicKeyToString(publicKey), username, calleeUsername);
             Transaction<AuthenticationPayload> transaction = new Transaction<>(id, "Server", payload);
@@ -96,7 +98,8 @@ public class Client extends User{
 
             reply = readMessage();
             if(reply.startsWith("100")) {
-                authed = true;
+                this.authed = true;
+                disconnect();
             } else {
                 System.err.println("Authentication failed");
             }
@@ -104,7 +107,6 @@ public class Client extends User{
         else {
             System.err.println("Error while authenticating.");
         }
-        return authed;
     }
 
     public List<String> getTrustedList() {
@@ -127,7 +129,8 @@ public class Client extends User{
         return trustedList;
     }
 
-    public void register() {
+    public void register(String username) {
+        this.username = username;
         ClientRegistrationPayload registration = registerRequest();
         if(registration != null) {
             Transaction<ClientRegistrationPayload> transaction = new Transaction<>(registration.getId(), "Server", registration);
@@ -190,4 +193,15 @@ public class Client extends User{
         return null;
     }
 
+    public void disconnect() {
+        try {
+            this.oos.close();
+            this.ois.close();
+            this.connection.close();
+            System.out.println("CONNECTIONS CLOSED");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
 }

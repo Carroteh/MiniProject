@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.text.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<fx:root fx:id="anRoot" prefHeight="360.0" prefWidth="600.0" type="AnchorPane" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="acsse.csc03a3.miniproject.controller.ServerController">
+   <children>
+      <Label layoutX="14.0" layoutY="14.0" text="Server Log:">
+         <font>
+            <Font size="16.0" />
+         </font></Label>
+      <TextArea fx:id="txtServerLog" editable="false" layoutY="39.0" prefHeight="321.0" prefWidth="600.0" />
+   </children>
+</fx:root>

@@ -3,6 +3,8 @@ package acsse.csc03a3.miniproject.model;
 import acsse.csc03a3.miniproject.blockchain.ETransaction;
 import acsse.csc03a3.miniproject.payloads.Payload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
@@ -23,8 +25,20 @@ public abstract class User {
     protected ObjectInputStream ois;
     protected int port;
 
-    public User() {
+    private TextArea txtLog;
+    private TextField txtID;
+    private TextField txtPublicKey;
+    private TextField txtPrivateKey;
+    private TextField txtClientsRegistered;
+
+    public User(TextArea txtLog, TextField txtID, TextField txtPublicKey, TextField txtPrivateKey, TextField txtClientsRegistered) {
+        this.txtID = txtID;
+        this.txtPublicKey = txtPublicKey;
+        this.txtPrivateKey = txtPrivateKey;
+        this.txtClientsRegistered = txtClientsRegistered;
+        this.txtLog = txtLog;
         generateKeys();
+        //TODO display keys
         this.port = 3301;
         try {
             this.connection = new Socket("localhost", port);

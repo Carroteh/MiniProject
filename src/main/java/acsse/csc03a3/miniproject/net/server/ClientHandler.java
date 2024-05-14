@@ -8,6 +8,7 @@ import acsse.csc03a3.miniproject.payloads.ClientRegistrationPayload;
 import acsse.csc03a3.miniproject.payloads.Payload;
 import acsse.csc03a3.miniproject.payloads.RequestPayload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
+import javafx.scene.control.TextArea;
 
 import java.io.*;
 import java.net.Socket;
@@ -27,12 +28,14 @@ public class ClientHandler implements Runnable {
     private ConcurrentHashMap<String, String> adminDetails;
     private List<String> trustedList;
     private boolean running;
+    private TextArea txtLog;
 
-    public ClientHandler(Socket connection, BlockchainManager bcManager, ConcurrentHashMap<String, String> adminDetails, List<String> trustedList) {
+    public ClientHandler(Socket connection, BlockchainManager bcManager, ConcurrentHashMap<String, String> adminDetails, List<String> trustedList, TextArea txtLog) {
         this.trustedList = trustedList;
         this.adminDetails = adminDetails;
         this.connection = connection;
         this.bcManager = bcManager;
+        this.txtLog = txtLog;
         this.oos = null;
         this.ois = null;
         this.running = true;
@@ -79,6 +82,7 @@ public class ClientHandler implements Runnable {
                 }
                 else if(command.equals("AUTH") && numTokens == 1) {
                     handleMutualAuthentication();
+                    return;
                 }
                 else {
                     sendMessage("Bad request", true);
@@ -106,7 +110,6 @@ public class ClientHandler implements Runnable {
         else {
             sendMessage("Error receiving transaction", true);
         }
-        running = false;
     }
 
     private void handleGetTrustedList() {
@@ -262,7 +265,7 @@ public class ClientHandler implements Runnable {
             message = (String)ois.readObject();
             System.out.println("C: " + message);
         }
-        catch(SocketException ex) {
+        catch(SocketException | EOFException ex) {
             System.out.println("Client has disconnected, terminating handler.");
             try {
                 connection.close();
