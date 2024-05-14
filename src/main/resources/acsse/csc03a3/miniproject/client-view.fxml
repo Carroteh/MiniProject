@@ -7,10 +7,9 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-
-<AnchorPane prefHeight="500.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="acsse.csc03a3.miniproject.controller.ClientController">
+<AnchorPane prefHeight="500.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="acsse.csc03a3.miniproject.controller.ClientController">
    <children>
-      <SplitPane dividerPositions="0.22690763052208834" orientation="VERTICAL" prefHeight="500.0" prefWidth="700.0">
+      <SplitPane dividerPositions="0.22690763052208834" orientation="VERTICAL" prefHeight="500.0" prefWidth="800.0">
         <items>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                <children>
@@ -22,50 +21,72 @@
                   <TextField fx:id="txtUsername" layoutX="120.0" layoutY="11.0" prefHeight="25.0" prefWidth="79.0" />
                   <Button layoutX="14.0" layoutY="43.0" mnemonicParsing="false" onAction="#onAssociate" prefHeight="25.0" prefWidth="184.0" text="Associate" />
                   <Button layoutX="14.0" layoutY="76.0" mnemonicParsing="false" onAction="#onRegister" prefHeight="25.0" prefWidth="184.0" text="Register" />
-                  <Label fx:id="lblAssocStatus" layoutX="208.0" layoutY="47.0" text="Success!">
+                  <Label fx:id="lblAssocStatus" layoutX="208.0" layoutY="47.0">
                      <font>
                         <Font size="13.0" />
                      </font>
                   </Label>
-                  <Label fx:id="lblRegisterStatus" layoutX="210.0" layoutY="80.0" text="Label">
+                  <Label fx:id="lblRegisterStatus" layoutX="210.0" layoutY="80.0">
                      <font>
                         <Font size="13.0" />
                      </font>
                   </Label>
-                  <Label layoutX="460.0" layoutY="14.0" text="ID:">
+                  <Label layoutX="461.0" layoutY="14.0" text="ID:">
                      <font>
                         <Font size="13.0" />
                      </font>
                   </Label>
-                  <Label layoutX="460.0" layoutY="46.0" text="Public Key:">
+                  <Label layoutX="415.0" layoutY="46.0" text="Public Key:">
                      <font>
                         <Font size="13.0" />
                      </font>
                   </Label>
-                  <Label layoutX="460.0" layoutY="79.0" text="Private Key:">
+                  <Label layoutX="413.0" layoutY="79.0" text="Private Key:">
                      <font>
                         <Font size="13.0" />
                      </font>
                   </Label>
-                  <TextField fx:id="txtID" layoutX="535.0" layoutY="11.0" />
-                  <TextField fx:id="txtPublicKey" layoutX="535.0" layoutY="44.0" />
-                  <TextField fx:id="txtPrivateKey" layoutX="535.0" layoutY="76.0" />
+                  <TextField fx:id="txtID" editable="false" layoutX="489.0" layoutY="11.0" prefHeight="25.0" prefWidth="295.0" />
+                  <TextField fx:id="txtPublicKey" editable="false" layoutX="489.0" layoutY="44.0" prefHeight="25.0" prefWidth="295.0" />
+                  <TextField fx:id="txtPrivateKey" editable="false" layoutX="489.0" layoutY="76.0" prefHeight="25.0" prefWidth="295.0" />
                </children>
             </AnchorPane>
           <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                <children>
-                  <SplitPane dividerPositions="0.2686781609195402" prefHeight="382.0" prefWidth="698.0">
+                  <SplitPane dividerPositions="0.25125628140703515" prefHeight="382.0" prefWidth="798.0">
                     <items>
                       <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                            <children>
-                              <ListView fx:id="lstUsers" prefHeight="380.0" prefWidth="184.0" />
+                              <ListView fx:id="lstUsers" layoutY="50.0" prefHeight="330.0" prefWidth="195.0" />
+                              <Button layoutY="2.0" mnemonicParsing="false" onAction="#btnRefreshContacts" prefHeight="25.0" prefWidth="195.0" text="Refresh" />
+                              <Label layoutY="31.0" text="Contact List:">
+                                 <font>
+                                    <Font size="13.0" />
+                                 </font>
+                              </Label>
                            </children>
                         </AnchorPane>
-                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="380.0" prefWidth="501.0">
                            <children>
-                              <SplitPane dividerPositions="0.2789473684210526" orientation="VERTICAL" prefHeight="382.0" prefWidth="506.0">
+                              <SplitPane dividerPositions="0.2789473684210526" orientation="VERTICAL" prefHeight="382.0" prefWidth="597.0">
                                 <items>
-                                  <AnchorPane fx:id="ancUserDetails" minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0" />
+                                  <AnchorPane fx:id="ancUserDetails" minHeight="0.0" minWidth="0.0" prefHeight="103.0" prefWidth="482.0">
+                                       <children>
+                                          <Label layoutX="14.0" layoutY="24.0" text="Contact:">
+                                             <font>
+                                                <Font size="13.0" />
+                                             </font>
+                                          </Label>
+                                          <Button fx:id="btnCall" layoutX="423.0" layoutY="21.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="112.0" text="Call" />
+                                          <Button fx:id="btnHangUp" layoutX="423.0" layoutY="52.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="112.0" text="Hangup" />
+                                          <Label layoutX="14.0" layoutY="56.0" text="Auth Status:">
+                                             <font>
+                                                <Font size="13.0" />
+                                             </font>
+                                          </Label>
+                                          <TextField fx:id="txtAuthStatus" editable="false" layoutX="96.0" layoutY="53.0" prefHeight="25.0" prefWidth="112.0" />
+                                          <TextField fx:id="txtContactUsername" editable="false" layoutX="96.0" layoutY="21.0" prefHeight="25.0" prefWidth="112.0" />
+                                       </children></AnchorPane>
                                   <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                                        <children>
                                           <Label layoutY="6.0" text="Log:">
@@ -73,7 +94,7 @@
                                                 <Font size="13.0" />
                                              </font>
                                           </Label>
-                                          <TextArea fx:id="txtLog" layoutY="25.0" prefHeight="246.0" prefWidth="504.0" />
+                                          <TextArea fx:id="txtLog" editable="false" layoutY="25.0" prefHeight="246.0" prefWidth="593.0" />
                                        </children>
                                     </AnchorPane>
                                 </items>

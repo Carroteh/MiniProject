@@ -25,10 +25,10 @@ public class ClientHandler implements Runnable {
     protected ObjectInputStream ois;
 
     private final BlockchainManager bcManager;
-    private ConcurrentHashMap<String, String> adminDetails;
-    private List<String> trustedList;
+    private final ConcurrentHashMap<String, String> adminDetails;
+    private final List<String> trustedList;
     private boolean running;
-    private TextArea txtLog;
+    private final TextArea txtLog;
 
     public ClientHandler(Socket connection, BlockchainManager bcManager, ConcurrentHashMap<String, String> adminDetails, List<String> trustedList, TextArea txtLog) {
         this.trustedList = trustedList;
@@ -89,7 +89,7 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Log("IO Exception: " + e.getMessage());
         }
     }
 
@@ -132,7 +132,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleUserRegistration() {
+    private synchronized void handleUserRegistration() {
         sendMessage("Continue", false);
         ETransaction<Payload> transaction = receiveTransaction();
         if(transaction != null) {
@@ -170,7 +170,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleUserAssocation() {
+    private synchronized void handleUserAssocation() {
         //Check if an admin is registered
         if(!bcManager.checkAdminExistance()) {
             sendMessage("Admin does not exist.", true);
@@ -193,7 +193,7 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleUserRegistrationRequest() {
+    private synchronized void handleUserRegistrationRequest() {
         if(bcManager.checkAdminExistance()) {
             sendMessage(adminDetails.get("address"), false);
             sendMessage("3302", false);
@@ -204,7 +204,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    private void handleAdminAssociation() {
+    private synchronized void handleAdminAssociation() {
         sendMessage("Continue", false);
         try {
             ETransaction<Payload> transaction =  receiveTransaction();
@@ -226,8 +226,12 @@ public class ClientHandler implements Runnable {
             }
         }
         catch(ClassCastException e) {
-            e.printStackTrace();
+            Log("ClassCastException: " + e.getMessage());
         }
+    }
+
+    private void Log(String message) {
+        this.txtLog.appendText(message + "\n");
     }
 
 
@@ -241,16 +245,16 @@ public class ClientHandler implements Runnable {
             if(err) {
                 oos.writeUTF("101 " + message);
                 oos.flush();
-                System.out.println("S: 101 " + message);
+                Log("S: 101 " + message);
             }
             else {
                 oos.writeUTF("100 " + message);
                 oos.flush();
-                System.out.println("S: 100 " + message);
+                Log("S: 100 " + message);
             }
         }
         catch (IOException ex) {
-            ex.printStackTrace();
+            Log("IOException: " + ex.getMessage());
         }
     }
 
@@ -263,17 +267,18 @@ public class ClientHandler implements Runnable {
 
         try {
             message = (String)ois.readObject();
-            System.out.println("C: " + message);
+            Log("C: " + message);
         }
         catch(SocketException | EOFException ex) {
-            System.out.println("Client has disconnected, terminating handler.");
+            Log("Client has disconnected, terminating handler.");
             try {
+                running = false;
                 connection.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                Log("IOException: " + e.getMessage());
             }
         } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+            Log("IOException: " + e.getMessage());
         }
         return message;
     }
@@ -285,15 +290,15 @@ public class ClientHandler implements Runnable {
     public byte[] readBytes() {
         try {
             byte[] arr;
-            System.out.println("Reading bytes...");
+            Log("Reading bytes...");
             int length = ois.readInt();
             arr = new byte[length];
             ois.readFully(arr, 0, length);
-            System.out.println("Read bytes");
+            Log("Read bytes: " + length);
             return arr;
         }
         catch(Exception ex) {
-            ex.printStackTrace();
+            Log("Exception: " + ex.getMessage());
         }
         return new byte[0];
     }
@@ -305,15 +310,15 @@ public class ClientHandler implements Runnable {
     public void sendBytes(byte[] data) {
         try {
             //Send size
-            System.out.println("Sending bytes...");
+            Log("Sending bytes...");
             oos.writeInt(data.length);
             oos.flush();
             oos.write(data, 0, data.length);
-            System.out.println("Sent bytes.");
+            Log("Sent bytes...");
             oos.flush();
 
         } catch (IOException ex) {
-            ex.printStackTrace();
+            Log("IOException: " + ex.getMessage());
         }
     }
 
@@ -323,13 +328,13 @@ public class ClientHandler implements Runnable {
      */
     public void sendObject(Object obj) {
         try {
-            System.out.println("Sending object...");
+            Log("Sending object...");
             oos.writeObject(obj);
-            System.out.println("Sent object.");
+            Log("Sent object...");
             oos.flush();
         }
         catch(Exception ex) {
-            ex.printStackTrace();
+            Log("IOException: " + ex.getMessage());
         }
     }
 
@@ -340,12 +345,12 @@ public class ClientHandler implements Runnable {
     public Object readObject() {
         Object obj = null;
         try {
-            System.out.println("Reading object...");
+            Log("Reading object...");
             obj = ois.readObject();
-            System.out.println("Read object.");
+            Log("Read object...");
         }
         catch(Exception ex) {
-            ex.printStackTrace();
+            Log("IOException: " + ex.getMessage());
         }
         return obj;
     }
@@ -385,9 +390,9 @@ public class ClientHandler implements Runnable {
         String token = this.readMessage();
 
         if (SecurityUtils.verify(token, signature, pk)) {
-            System.out.println("Successfully verified transaction.");
+            Log("Successfully verified transaction signature.");
         } else {
-            System.out.println("Failed to verify transaction.");
+            Log("Failed to verify transaction signature.");
             return null;
         }
 

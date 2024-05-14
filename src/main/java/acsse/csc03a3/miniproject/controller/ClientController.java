@@ -2,11 +2,10 @@ package acsse.csc03a3.miniproject.controller;
 
 import acsse.csc03a3.miniproject.model.Client;
 import javafx.event.ActionEvent;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.AnchorPane;
+
+import java.util.List;
 
 public class ClientController {
     @javafx.fxml.FXML
@@ -29,10 +28,18 @@ public class ClientController {
     private Label lblRegisterStatus;
 
     private Client client;
+    @javafx.fxml.FXML
+    private TextField txtContactUsername;
+    @javafx.fxml.FXML
+    private TextField txtAuthStatus;
+    @javafx.fxml.FXML
+    private Button btnHangUp;
+    @javafx.fxml.FXML
+    private Button btnCall;
 
     @javafx.fxml.FXML
     public void initialize() {
-        client = new Client(txtLog, txtID, txtPublicKey, txtPrivateKey, null);
+        client = new Client(txtLog, txtID, txtPublicKey, txtPrivateKey, txtUsername, lblAssocStatus, lblRegisterStatus, txtAuthStatus);
     }
 
 
@@ -46,4 +53,29 @@ public class ClientController {
     public void onAssociate(ActionEvent actionEvent) {
         client.associate();
     }
+
+    @javafx.fxml.FXML
+    public void btnRefreshContacts(ActionEvent actionEvent) {
+        getContacts();
+    }
+
+    public void getContacts() {
+        List<String> contacts =  client.getTrustedList();
+        lstUsers.getItems().clear();
+        lstUsers.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            int index = lstUsers.getSelectionModel().getSelectedIndex();
+            String user = contacts.get(index);
+            txtContactUsername.setText(user);
+            btnCall.setOnAction(e -> {
+                client.call(user);
+            });
+            btnHangUp.setOnAction(e -> {
+                client.hangup();
+            });
+        });
+        if(!contacts.isEmpty()) {
+            lstUsers.getItems().addAll(contacts);
+        }
+    }
+
 }

@@ -13,8 +13,6 @@ public class AdminController {
     @javafx.fxml.FXML
     private TextField txtAdminID;
     @javafx.fxml.FXML
-    private TextField txtClientsRegistered;
-    @javafx.fxml.FXML
     private TextField txtAdminPrK;
     @javafx.fxml.FXML
     private Button btnRegister;
@@ -26,7 +24,7 @@ public class AdminController {
 
     @javafx.fxml.FXML
     public void initialize() {
-        admin = new Admin(txtLog, txtAdminID, txtAdminPuK, txtAdminPrK, txtClientsRegistered);
+        admin = new Admin(txtLog, txtAdminID, txtAdminPuK, txtAdminPrK, lblRegisterStatus);
     }
 
 

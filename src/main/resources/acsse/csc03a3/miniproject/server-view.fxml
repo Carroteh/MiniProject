@@ -7,12 +7,12 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<fx:root fx:id="anRoot" prefHeight="360.0" prefWidth="600.0" type="AnchorPane" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="acsse.csc03a3.miniproject.controller.ServerController">
+<AnchorPane prefHeight="500.0" prefWidth="700.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="acsse.csc03a3.miniproject.controller.ServerController">
    <children>
       <Label layoutX="14.0" layoutY="14.0" text="Server Log:">
          <font>
-            <Font size="16.0" />
+            <Font size="13.0" />
          </font></Label>
-      <TextArea fx:id="txtServerLog" editable="false" layoutY="39.0" prefHeight="321.0" prefWidth="600.0" />
+      <TextArea fx:id="txtServerLog" editable="false" layoutY="39.0" prefHeight="462.0" prefWidth="700.0" />
    </children>
-</fx:root>
+</AnchorPane>

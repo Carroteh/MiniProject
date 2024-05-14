@@ -13,11 +13,16 @@ public class ChooserController {
 
     private Stage stage;
     @javafx.fxml.FXML
-    private AnchorPane root;
+    private AnchorPane stump;
+
+    @javafx.fxml.FXML
+    public void initialize() {
+
+    }
 
     @javafx.fxml.FXML
     public void onChooseAdmin(ActionEvent actionEvent) throws IOException {
-        this.stage = (Stage) root.getScene().getWindow();
+        this.stage = (Stage) stump.getScene().getWindow();
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("admin-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Admin Panel");
@@ -27,7 +32,7 @@ public class ChooserController {
 
     @javafx.fxml.FXML
     public void onStartServer(ActionEvent actionEvent) throws IOException {
-        this.stage = (Stage) root.getScene().getWindow();
+        this.stage = (Stage) stump.getScene().getWindow();
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("server-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Server");
@@ -37,7 +42,7 @@ public class ChooserController {
 
     @javafx.fxml.FXML
     public void onChooseClient(ActionEvent actionEvent) throws IOException {
-        this.stage = (Stage) root.getScene().getWindow();
+        this.stage = (Stage) stump.getScene().getWindow();
         FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("client-view.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
         stage.setTitle("Client Panel");

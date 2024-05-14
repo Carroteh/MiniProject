@@ -4,10 +4,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.IOException;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import java.security.Security;
-import java.security.Signature;
+import java.security.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
@@ -49,6 +46,11 @@ public class SecurityUtils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static String privateKeyToString(PrivateKey privateKey){
+        byte[] privateKeyBytes = privateKey.getEncoded();
+        return Base64.getEncoder().encodeToString(privateKeyBytes);
     }
 
     /**

@@ -24,7 +24,7 @@ public class BlockchainParser {
      * Function that parses a blockchain string into an arraylist of blocks
      * @return ArrayList of blocks
      */
-    public ArrayList<Block<Payload>> getBlocks() {
+    public synchronized ArrayList<Block<Payload>> getBlocks() {
         ArrayList<String> strBlocks = getStrBlocks();
         ArrayList<Block<Payload>> blocks =  new ArrayList<>();
         for (String strBlock : strBlocks) {
@@ -36,7 +36,7 @@ public class BlockchainParser {
         return blocks;
     }
 
-    private ArrayList<String> getStrBlocks() {
+    private synchronized ArrayList<String> getStrBlocks() {
         String strBlockchain = blockchain.toString();
         StringTokenizer st = new StringTokenizer(strBlockchain, "\n");
         ArrayList<String> blocks = new ArrayList<String>();
@@ -46,7 +46,7 @@ public class BlockchainParser {
         return blocks;
     }
 
-    private Transaction<Payload> getTransaction(String badTransaction) {
+    private synchronized Transaction<Payload> getTransaction(String badTransaction) {
         String[] payloadStr = badTransaction.split("`");
         String sender = payloadStr[0].trim();
         String receiver = payloadStr[1].trim();
@@ -72,7 +72,7 @@ public class BlockchainParser {
         return new Transaction(sender, receiver, payload);
     }
 
-    private Block<Payload> getBlock(String badBlock) {
+    private synchronized Block<Payload> getBlock(String badBlock) {
         StringTokenizer st = new StringTokenizer(badBlock, "=");
         st.nextToken();
         String prevHashBad = st.nextToken();

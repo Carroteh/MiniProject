@@ -22,7 +22,7 @@ public class BlockchainSearcher {
      * Function that checks if an admin is already associated with the payload
      * @return true of the admin is associated, false otherwise
      */
-    public boolean checkAdminExistance() {
+    public synchronized boolean checkAdminExistance() {
         ArrayList<Block<Payload>> blocks = parser.getBlocks();
         for (Block<Payload> block : blocks) {
             List<Transaction<Payload>> transactions = block.getTransactions();
@@ -35,7 +35,7 @@ public class BlockchainSearcher {
         return false;
     }
 
-    public boolean checkUserAssociation(String publicKey) {
+    public synchronized boolean checkUserAssociation(String publicKey) {
         ArrayList<Block<Payload>> blocks = parser.getBlocks();
         for (Block<Payload> block : blocks) {
             List<Transaction<Payload>> transactions = block.getTransactions();
@@ -50,7 +50,7 @@ public class BlockchainSearcher {
         return false;
     }
 
-    public boolean checkUserRegistered(String id) {
+    public synchronized boolean checkUserRegistered(String id) {
         ArrayList<Block<Payload>> blocks = parser.getBlocks();
         for (Block<Payload> block : blocks) {
             List<Transaction<Payload>> transactions = block.getTransactions();
@@ -65,7 +65,7 @@ public class BlockchainSearcher {
         return false;
     }
 
-    public boolean checkUsernameRegistered(String username) {
+    public synchronized boolean checkUsernameRegistered(String username) {
         ArrayList<Block<Payload>> blocks = parser.getBlocks();
         for (Block<Payload> block : blocks) {
             List<Transaction<Payload>> transactions = block.getTransactions();
@@ -80,7 +80,7 @@ public class BlockchainSearcher {
         return false;
     }
 
-    public String getAdminPK() {
+    public synchronized String getAdminPK() {
         ArrayList<Block<Payload>> blocks = parser.getBlocks();
         for (Block<Payload> block : blocks) {
             List<Transaction<Payload>> transactions = block.getTransactions();

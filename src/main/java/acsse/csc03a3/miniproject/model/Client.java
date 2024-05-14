@@ -7,13 +7,16 @@ import acsse.csc03a3.miniproject.payloads.ClientRegistrationPayload;
 import acsse.csc03a3.miniproject.payloads.RequestPayload;
 import acsse.csc03a3.miniproject.utils.NotifListener;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import webphone.webphone;
 
+import java.io.*;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -23,10 +26,19 @@ public class Client extends User{
     private String id;
     private webphone wobj;
     private boolean authed;
+    private TextField txtUsername;
+    private Label lblAssocStatus;
+    private Label lblRegStatus;
+    private TextField txtAuthed;
 
-    public Client(TextArea txtLog, TextField txtID, TextField txtPublicKey, TextField txtPrivateKey, TextField txtClientsRegistered) {
-        super(txtLog, txtID, txtPublicKey, txtPrivateKey, txtClientsRegistered);
-        this.username = username;
+    public Client(TextArea txtLog, TextField txtID, TextField txtPublicKey, TextField txtPrivateKey, TextField txtUsername, Label lblAssocStatus, Label lblRegStatus, TextField txtAuthed) {
+        super(txtLog, txtID, txtPublicKey, txtPrivateKey);
+        this.txtUsername = txtUsername;
+        this.txtAuthed = txtAuthed;
+        this.lblAssocStatus = lblAssocStatus;
+        this.lblRegStatus = lblRegStatus;
+        this.txtPublicKey.setText(SecurityUtils.publicKeyToString(publicKey));
+        this.txtPrivateKey.setText(SecurityUtils.privateKeyToString(privateKey));
         this.authed = false;
         setupVoIP();
     }
@@ -49,9 +61,16 @@ public class Client extends User{
             sendTransaction("User", "Server", payload, signature, transaction.toString());
         }
         else {
-            System.err.println("Error initiating association");
+            Log("Error in initiating association");
+            lblAssocStatus.setText("Error in initiating association");
         }
-        readMessage();
+        response = readMessage();
+        if(response.startsWith("100")) {
+            lblAssocStatus.setText("Successfully associated!");
+        }
+        else {
+            lblAssocStatus.setText("Association failed!");
+        }
     }
 
     public void accept() {
@@ -62,12 +81,12 @@ public class Client extends User{
         //VOIP Setup
         this.wobj = new webphone();
 
-        wobj.API_SetNotificationListener(new NotifListener());
+        wobj.API_SetNotificationListener(new NotifListener(txtLog));
         wobj.API_SetParameter("serveraddress", "127.0.0.1:1234");
         wobj.API_SetParameter("setserverfromtarget", "2");
         wobj.API_SetParameter("register", "0");
         wobj.API_SetParameter("username", username);
-        wobj.API_SetParameter("loglevel", "5");
+        wobj.API_SetParameter("loglevel", "1");
         //wobj.API_SetParameter("signalingport", "1234");
         wobj.API_Start();
     }
@@ -75,16 +94,18 @@ public class Client extends User{
 
     public void call(String username) {
         setupVoIP();
+        authenticate(username);
         if(authed) {
             wobj.API_Call(-1, username + "@127.0.0.1:1234");
         }
         else {
-            System.err.println("User not authenticated.");
+            Log("User not authenticated.");
         }
     }
 
     public void hangup() {
         wobj.API_Hangup();
+        reconnect();
     }
 
     public void authenticate(String calleeUsername) {
@@ -99,13 +120,16 @@ public class Client extends User{
             reply = readMessage();
             if(reply.startsWith("100")) {
                 this.authed = true;
+                txtAuthed.setText("True.");
                 disconnect();
             } else {
-                System.err.println("Authentication failed");
+                txtAuthed.setText("False.");
+                Log("Authentication failed");
             }
         }
         else {
-            System.err.println("Error while authenticating.");
+            txtAuthed.setText("False.");
+            Log("Error while authenticating.");
         }
     }
 
@@ -123,7 +147,7 @@ public class Client extends User{
                 trustedList = (List<String>) readObject();
             }
             else {
-                System.err.println("Error retrieving trusted list");
+                Log("Error retrieving trusted list");
             }
         }
         return trustedList;
@@ -141,9 +165,18 @@ public class Client extends User{
                 sendTransaction(registration.getId(), "Server", registration, signature, transaction.toString());
             }
             else {
-                System.err.println("Error in registration");
+                Log("Error in registration");
+                lblAssocStatus.setText("Error in registration");
             }
-            readMessage();
+            reply = readMessage();
+            if(reply.startsWith("100")) {
+                lblRegStatus.setText("Successfully registered!");
+                this.id = registration.getId();
+                txtID.setText(id);
+            }
+            else {
+                lblRegStatus.setText("Registration failed!");
+            }
         }
     }
 
@@ -164,7 +197,8 @@ public class Client extends User{
                 byte[] msgBuffer = message.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(msgBuffer, msgBuffer.length, InetAddress.getByName(adminAddress), adminPort);
                 socket.send(sendPacket);
-                System.out.println("Sent Ticket request to admin.");
+                Log("Sent Ticket request to admin.");
+
                 byte[] pkBuffer = SecurityUtils.publicKeyToString(this.publicKey).getBytes();
                 sendPacket = new DatagramPacket(pkBuffer, pkBuffer.length, InetAddress.getByName(adminAddress), adminPort);
                 socket.send(sendPacket);
@@ -184,11 +218,11 @@ public class Client extends User{
                 socket.close();
                 return new ClientRegistrationPayload(id,username, hash, ticket, SecurityUtils.publicKeyToString(this.publicKey));
             } catch (Exception e) {
-                e.printStackTrace();
+                Log("Exception: " + e.getMessage());
             }
         }
         else {
-            System.err.println("An Admin is not registered.");
+            Log("An Admin is not registered.");
         }
         return null;
     }
@@ -198,10 +232,24 @@ public class Client extends User{
             this.oos.close();
             this.ois.close();
             this.connection.close();
-            System.out.println("CONNECTIONS CLOSED");
+            Log("Disconnect from server");
         } catch (Exception e) {
-            e.printStackTrace();
+            Log("Exception: " + e.getMessage());
         }
 
     }
+
+    public void reconnect() {
+        this.port = 3301;
+        try {
+            this.connection = new Socket("localhost", port);
+            this.oos = new ObjectOutputStream(new BufferedOutputStream(connection.getOutputStream()));
+            oos.flush();
+            this.ois = new ObjectInputStream(new BufferedInputStream(connection.getInputStream()));
+
+        } catch (IOException e) {
+            Log("IO Exception: " + e.getMessage());
+        }
+    }
+
 }

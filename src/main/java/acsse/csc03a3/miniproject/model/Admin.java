@@ -3,6 +3,7 @@ package acsse.csc03a3.miniproject.model;
 import acsse.csc03a3.Transaction;
 import acsse.csc03a3.miniproject.payloads.AdminAssociationPayload;
 import acsse.csc03a3.miniproject.utils.SecurityUtils;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import org.bouncycastle.util.encoders.Hex;
@@ -20,10 +21,15 @@ public class Admin extends User {
     private String ID;
     private DatagramSocket socket;
 
+    private Label lblRegisterStatus;
 
-    public Admin(TextArea txtLog, TextField txtID, TextField txtPublicKey, TextField txtPrivateKey, TextField txtClientsRegistered) {
-        super(txtLog, txtID, txtPublicKey, txtPrivateKey, txtClientsRegistered);
+    public Admin(TextArea txtLog, TextField txtID, TextField txtPublicKey, TextField txtPrivateKey, Label lblRegisterStatus) {
+        super(txtLog, txtID, txtPublicKey, txtPrivateKey);
         generateID();
+        this.txtID.setText(ID);
+        this.lblRegisterStatus = lblRegisterStatus;
+        this.txtPublicKey.setText(SecurityUtils.publicKeyToString(publicKey));
+        this.txtPrivateKey.setText(SecurityUtils.privateKeyToString(privateKey));
         startUDPServer();
     }
 
@@ -57,42 +63,21 @@ public class Admin extends User {
 
                                 String strTicket = Base64.getEncoder().encodeToString(ticket);
                                 sendUDPMessage(strTicket.getBytes(), strTicket.getBytes().length, address, port);
-                                System.out.println("Sent ticket to user.");
+                                Log("Sent ticket to user");
                             }
                             else {
-                                System.err.println("Could not generate user ticket.");
+                                Log("Could not generate user ticket.");
                             }
                         }
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log("Third party admin detected");
                     }
                 }
             }).start();
         } catch (IOException ex) {
-            ex.printStackTrace();
+            Log("Third party admin detected");
         }
     }
-
-//    private void handleUserRegistrationRequest() {
-//
-//        System.out.println("handling user registration request");
-//        sendMessage("100 Continue");
-//        ETransaction<Payload> transaction = receiveTransaction();
-//        String id = generateUserID();
-//        String hash = bcHash(id + transaction.getData().getPublicKey());
-//        if(!hash.isEmpty()) {
-//            //Create ticket for the user to register
-//            byte[] ticket = this.sign(hash);
-//            sendMessage("100");
-//            sendMessage(id);
-//            sendMessage(hash);
-//            sendBytes(ticket);
-//        }
-//        else {
-//            System.err.println("Error creating user ticket hash");
-//            sendMessage("101 Could not generate user ticket.");
-//        }
-//    }
 
     private String bcHash(String input) {
         String sha256hex = "";
@@ -102,7 +87,7 @@ public class Admin extends User {
             sha256hex = new String(Hex.encode(hash));
             return sha256hex;
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+            Log("NoSuchAlgorithmException: " + e.getMessage());
         }
         return sha256hex;
     }
@@ -141,9 +126,15 @@ public class Admin extends User {
             sendTransaction(ID, "Server", payload, signature, transaction.toString());
         }
         else {
-            System.err.println("Error initiating association");
+            Log("Error initiating association");
         }
-        readMessage();
+        response = readMessage();
+        if(response.startsWith("100")) {
+            lblRegisterStatus.setText("Successfully Registered!");
+        }
+        else {
+            lblRegisterStatus.setText("Registration Failed!");
+        }
     }
 
     /**
@@ -159,7 +150,7 @@ public class Admin extends User {
             socket.send(sendPacket);
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Log("IO Error: " + e.getMessage());
         }
     }
 }

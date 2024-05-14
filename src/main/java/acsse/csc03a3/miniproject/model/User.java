@@ -25,20 +25,17 @@ public abstract class User {
     protected ObjectInputStream ois;
     protected int port;
 
-    private TextArea txtLog;
-    private TextField txtID;
-    private TextField txtPublicKey;
-    private TextField txtPrivateKey;
-    private TextField txtClientsRegistered;
+    protected TextArea txtLog;
+    protected TextField txtID;
+    protected TextField txtPublicKey;
+    protected TextField txtPrivateKey;
 
-    public User(TextArea txtLog, TextField txtID, TextField txtPublicKey, TextField txtPrivateKey, TextField txtClientsRegistered) {
+    public User(TextArea txtLog, TextField txtID, TextField txtPublicKey, TextField txtPrivateKey) {
         this.txtID = txtID;
         this.txtPublicKey = txtPublicKey;
         this.txtPrivateKey = txtPrivateKey;
-        this.txtClientsRegistered = txtClientsRegistered;
         this.txtLog = txtLog;
         generateKeys();
-        //TODO display keys
         this.port = 3301;
         try {
             this.connection = new Socket("localhost", port);
@@ -47,7 +44,7 @@ public abstract class User {
             this.ois = new ObjectInputStream(new BufferedInputStream(connection.getInputStream()));
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Log("IO Exception: " + e.getMessage());
         }
     }
 
@@ -69,8 +66,12 @@ public abstract class User {
             this.privateKey = (ECPrivateKey)pair.getPrivate();
         }
         catch (Exception e) {
-            e.printStackTrace();
+            Log("Generate Keys Exception: " + e.getMessage());
         }
+    }
+
+    protected void Log(String text) {
+        txtLog.appendText(text + "\n");
     }
 
     /**
@@ -90,7 +91,7 @@ public abstract class User {
             return signature.sign();
 
         } catch (Exception e) {
-            e.printStackTrace();
+            Log("Sign Exception: " + e.getMessage());
         }
         return null;
     }
@@ -98,11 +99,11 @@ public abstract class User {
     public void sendMessage(String message) {
         try {
             oos.writeObject(message);
-            System.out.println("C: " + message);
+            Log("C: " + message);
             oos.flush();
         }
         catch (IOException ex) {
-            ex.printStackTrace();
+            Log("IO Exception: " + ex.getMessage());
         }
 
     }
@@ -111,10 +112,10 @@ public abstract class User {
         String message = "";
         try {
             message = ois.readUTF();
-            System.out.println("S: " + message);
+            Log("S: " + message);
         }
         catch(IOException e) {
-            e.printStackTrace();
+            Log("IO Exception: " + e.getMessage());
         }
         return message;
     }
@@ -134,7 +135,7 @@ public abstract class User {
             return arr;
         }
         catch(Exception ex) {
-            ex.printStackTrace();
+            Log("IO Exception: " + ex.getMessage());
         }
         return new byte[0];
     }
@@ -146,15 +147,15 @@ public abstract class User {
     public void sendBytes(byte[] data) {
         try {
             //Send size
-            System.out.println("Sending bytes...");
+            Log("Sending bytes...");
             oos.writeInt(data.length);
             oos.flush();
             oos.write(data, 0, data.length);
-            System.out.println("Sent bytes.");
+            Log("Sent bytes.");
             oos.flush();
 
         } catch (IOException ex) {
-            ex.printStackTrace();
+            Log("IO Exception: " + ex.getMessage());
         }
     }
 
@@ -164,13 +165,13 @@ public abstract class User {
      */
     public void sendObject(Object obj) {
         try {
-            System.out.println("Sending object...");
+            Log("Sending object...");
             oos.writeObject(obj);
-            System.out.println("Sent object.");
+            Log("Sent object.");
             oos.flush();
         }
         catch(Exception ex) {
-            ex.printStackTrace();
+            Log("IO Exception: " + ex.getMessage());
         }
     }
 
@@ -184,7 +185,7 @@ public abstract class User {
             obj = ois.readObject();
         }
         catch(Exception ex) {
-            ex.printStackTrace();
+            Log("IO Exception: " + ex.getMessage());
         }
         return obj;
     }
@@ -224,10 +225,10 @@ public abstract class User {
         String token = this.readMessage();
 
         if(SecurityUtils.verify(token, signature, pk)) {
-            System.out.println("Successfully verified transaction.");
+            Log("Successfully verified transaction.");
         }
         else {
-            System.out.println("Failed to verify transaction.");
+            Log("Failed to verify transaction.");
             return null;
         }
 

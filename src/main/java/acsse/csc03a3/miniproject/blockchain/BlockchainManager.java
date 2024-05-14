@@ -8,11 +8,12 @@ import acsse.csc03a3.miniproject.payloads.ClientRegistrationPayload;
 import acsse.csc03a3.miniproject.payloads.Payload;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class BlockchainManager {
 
-    private final Blockchain<Payload> blockchain;
-    private final ArrayList<Transaction<Payload>> currentTSet;
+    private Blockchain<Payload> blockchain;
+    private List<Transaction<Payload>> currentTSet;
     private BlockchainSearcher bcSearcher;
 
     public BlockchainManager(Blockchain<Payload> blockchain) {
@@ -21,20 +22,19 @@ public class BlockchainManager {
         currentTSet = new ArrayList<>();
     }
 
-    public void addTransaction(Transaction<Payload> transaction) {
-        if (currentTSet.size() < 6) {
-            currentTSet.add(transaction);
-        } else {
+    public synchronized void addTransaction(Transaction<Payload> transaction) {
+        currentTSet.add(transaction);
+        if (currentTSet.size() >= 2) {
             blockchain.addBlock(currentTSet);
-            currentTSet.clear();
+            currentTSet = new ArrayList<>();
         }
     }
 
-    public void registerStake(String nodeAddress, int stake) {
+    public synchronized void registerStake(String nodeAddress, int stake) {
         blockchain.registerStake(nodeAddress, stake);
     }
 
-    public boolean checkAdminExistance() {
+    public synchronized boolean checkAdminExistance() {
         for (Transaction<Payload> transaction : currentTSet) {
             if(transaction.getData() instanceof AdminAssociationPayload) {
                 return true;
@@ -43,7 +43,7 @@ public class BlockchainManager {
         return bcSearcher.checkAdminExistance();
     }
 
-    public boolean checkUserAssociation(String publicKey) {
+    public synchronized boolean checkUserAssociation(String publicKey) {
         for (Transaction<Payload> transaction : currentTSet) {
             if(transaction.getData() instanceof ClientAssociationPayload client) {
                 if(client.getPublicKey().equals(publicKey)) {
@@ -54,7 +54,7 @@ public class BlockchainManager {
         return bcSearcher.checkUserAssociation(publicKey);
     }
 
-    public boolean checkUserRegistered(String id) {
+    public synchronized boolean checkUserRegistered(String id) {
         for (Transaction<Payload> transaction : currentTSet) {
             if(transaction.getData() instanceof ClientRegistrationPayload client) {
                 if(client.getId().equals(id)) {
@@ -62,10 +62,10 @@ public class BlockchainManager {
                 }
             }
         }
-        return bcSearcher.checkUserAssociation(id);
+        return bcSearcher.checkUserRegistered(id);
     }
 
-    public String getAdminPK() {
+    public synchronized String getAdminPK() {
         for (Transaction<Payload> transaction : currentTSet) {
             if(transaction.getData() instanceof AdminAssociationPayload) {
                 return (transaction.getData()).getPublicKey();
@@ -74,7 +74,7 @@ public class BlockchainManager {
         return bcSearcher.getAdminPK();
     }
 
-    public boolean checkUsernameRegistered(String username) {
+    public synchronized boolean checkUsernameRegistered(String username) {
         for (Transaction<Payload> transaction : currentTSet) {
             if(transaction.getData() instanceof ClientRegistrationPayload client) {
                 if(client.getUsername().equals(username)) {
@@ -85,4 +85,7 @@ public class BlockchainManager {
         return bcSearcher.checkUsernameRegistered(username);
     }
 
+    public Blockchain<Payload> getBlockchain() {
+        return blockchain;
+    }
 }

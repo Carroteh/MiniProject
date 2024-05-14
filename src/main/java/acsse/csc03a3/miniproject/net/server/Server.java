@@ -15,6 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Server {
 
+    private static Blockchain<Payload> blockchain;
+
     public static void main(String[] args) {start(3301, null);}
 
     /**
@@ -23,14 +25,14 @@ public class Server {
      */
     public static void start(int port, TextArea txtLog) {
         //Create blockchain
-        Blockchain<Payload> blockchain = new Blockchain<>();
+        blockchain = new Blockchain<>();
         BlockchainManager bcManager = new BlockchainManager(blockchain);
         ConcurrentHashMap<String, String> adminDetails = new ConcurrentHashMap<>();
         List<String> trustedUsers = Collections.synchronizedList(new ArrayList<>());
 
         try(ServerSocket serverSocket = new ServerSocket(port)) {
             while(true) {
-                System.out.println("Awaiting client on port " + port);
+                System.out.println("Awaiting clients on port: " + port);
                 Socket connection = serverSocket.accept();
 
                 //Create a clientHandler
@@ -38,7 +40,7 @@ public class Server {
                 //Create a new thread for the client
                 new Thread(clientHandler).start();
 
-                System.out.println("A client has connected: " + connection);
+                System.out.println("A client has connected: " + connection + "\n");
             }
         }
         catch(IOException e) {

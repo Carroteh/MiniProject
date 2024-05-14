@@ -7,8 +7,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-
-<AnchorPane fx:id="root" prefHeight="465.0" prefWidth="469.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="acsse.csc03a3.miniproject.controller.ChooserController">
+<AnchorPane fx:id="stump" prefHeight="465.0" prefWidth="469.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="acsse.csc03a3.miniproject.controller.ChooserController">
    <children>
       <Button layoutX="43.0" layoutY="174.0" mnemonicParsing="false" onAction="#onChooseAdmin" prefHeight="109.0" prefWidth="383.0" text="Admin">
          <font>

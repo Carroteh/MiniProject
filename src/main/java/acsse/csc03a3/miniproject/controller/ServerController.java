@@ -9,7 +9,8 @@ public class ServerController {
 
     @javafx.fxml.FXML
     public void initialize() {
-        Server.start(3301, txtServerLog);
+        new Thread(() -> {
+            Server.start(3301, txtServerLog);
+        }).start();
     }
-
 }
